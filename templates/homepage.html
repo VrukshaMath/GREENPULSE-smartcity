@@ -1,0 +1,593 @@
+{% extends "base.html" %}
+{% block title %}GreenPulse — Smart City Eco Platform{% endblock %}
+{% block body_class %}page-home{% endblock %}
+{% set active_page = 'home' %}
+
+{% block page_css %}
+<style>
+/* ═══════════════════════════════════════
+   HOMEPAGE — clean, light, minimal
+   ═══════════════════════════════════════ */
+
+#page-content { padding-top: 56px; }
+
+/* ── HERO ─────────────────────────────── */
+.hero {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 80px 40px 64px;
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 64px;
+  align-items: start;
+}
+
+.hero-kicker {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 20px;
+}
+
+.hero-kicker-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%; background: var(--green-lt);
+  animation: blink 2s ease-in-out infinite;
+}
+
+.hero-title {
+  font-family: var(--display);
+  font-size: clamp(2.4rem, 4.5vw, 3.8rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+  color: var(--text);
+  margin-bottom: 20px;
+}
+
+.hero-title .hl { color: var(--green-lt); }
+
+.hero-desc {
+  font-size: 0.9rem;
+  color: var(--text-2);
+  line-height: 1.75;
+  max-width: 420px;
+  margin-bottom: 36px;
+}
+
+.hero-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.btn-primary {
+  padding: 11px 22px;
+  background: var(--green);
+  border: none; border-radius: var(--radius);
+  color: #fff;
+  font-family: var(--display);
+  font-weight: 700; font-size: 0.82rem;
+  cursor: pointer; transition: var(--transition);
+  text-decoration: none;
+  display: inline-flex; align-items: center; gap: 7px;
+}
+
+.btn-primary:hover { background: #165c2e; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(30,107,56,0.25); }
+
+.btn-outline {
+  padding: 11px 22px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-2);
+  font-family: var(--display);
+  font-weight: 600; font-size: 0.82rem;
+  cursor: pointer; transition: var(--transition);
+  text-decoration: none;
+  display: inline-flex; align-items: center; gap: 7px;
+}
+
+.btn-outline:hover { border-color: var(--green-mid); color: var(--green); transform: translateY(-1px); }
+
+/* ── HERO RIGHT — live data card ─────── */
+.hero-panel {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  animation: fade-up 0.5s ease 0.15s both;
+}
+
+.panel-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+.panel-header-title {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.panel-live {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 0.6rem; color: var(--green);
+  letter-spacing: 0.08em;
+}
+
+.panel-body { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+
+/* Data row */
+.drow {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  transition: var(--transition);
+}
+
+.drow:hover { border-color: var(--green-mid); background: var(--green-bg); }
+.drow-icon { font-size: 1.1rem; flex-shrink: 0; }
+.drow-info { flex: 1; }
+.drow-label { font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-3); }
+.drow-val { font-family: var(--display); font-weight: 700; font-size: 0.88rem; color: var(--text); }
+.drow-badge {
+  padding: 3px 9px; border-radius: 99px;
+  font-size: 0.6rem; font-family: var(--mono);
+  font-weight: 500; flex-shrink: 0;
+  background: var(--green-bg);
+  border: 1px solid var(--green-mid);
+  color: var(--green);
+}
+
+/* ── DIVIDER ──────────────────────────── */
+.section-divider {
+  max-width: 1100px; margin: 0 auto;
+  padding: 0 40px;
+  border-top: 1px solid var(--border);
+  margin-bottom: 0;
+}
+
+/* ── STATS ROW ───────────────────────── */
+.stats-row {
+  max-width: 1100px; margin: 0 auto;
+  padding: 32px 40px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  animation: fade-up 0.5s ease 0.2s both;
+}
+
+.stat-box {
+  background: #fff;
+  padding: 20px 24px;
+  transition: var(--transition);
+}
+
+.stat-box:hover { background: var(--green-bg); }
+
+.stat-icon { font-size: 1.2rem; margin-bottom: 8px; }
+
+.stat-val {
+  font-family: var(--display);
+  font-size: 1.7rem; font-weight: 800;
+  color: var(--text);
+  line-height: 1; margin-bottom: 4px;
+}
+
+.stat-val.green  { color: var(--green-lt); }
+.stat-val.amber  { color: var(--amber); }
+.stat-val.sky    { color: var(--sky); }
+
+.stat-label {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-3);
+}
+
+/* ── MODULES SECTION ──────────────────── */
+.modules-section {
+  max-width: 1100px; margin: 0 auto;
+  padding: 56px 40px 80px;
+}
+
+.sec-header {
+  margin-bottom: 32px;
+  animation: fade-up 0.5s ease 0.25s both;
+}
+
+.sec-kicker {
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 6px;
+}
+
+.sec-title {
+  font-family: var(--display);
+  font-size: clamp(1.4rem, 2.5vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--text);
+}
+
+.sec-title span { color: var(--text-3); }
+
+.modules-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+/* Module card */
+.mod-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 26px;
+  cursor: pointer;
+  text-decoration: none;
+  display: flex; flex-direction: column;
+  transition: var(--transition);
+  animation: fade-up 0.5s ease both;
+}
+
+.mod-card:hover {
+  border-color: var(--green-mid);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-3px);
+}
+
+.mod-card:nth-child(1) { animation-delay: 0.3s; }
+.mod-card:nth-child(2) { animation-delay: 0.37s; }
+.mod-card:nth-child(3) { animation-delay: 0.44s; }
+.mod-card:nth-child(4) { animation-delay: 0.51s; }
+
+.mod-num {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  color: var(--text-3);
+  letter-spacing: 0.08em;
+  margin-bottom: 16px;
+}
+
+.mod-top-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.mod-icon {
+  width: 46px; height: 46px;
+  border-radius: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+  transition: var(--transition);
+}
+
+.mod-card:hover .mod-icon { background: var(--green-bg); border-color: var(--green-mid); }
+
+.mod-status {
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 0.58rem;
+  font-family: var(--mono);
+  letter-spacing: 0.06em;
+  background: var(--green-bg);
+  border: 1px solid var(--green-mid);
+  color: var(--green);
+}
+
+.mod-status-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%; background: var(--green-lt);
+  animation: blink 2s ease-in-out infinite;
+}
+
+.mod-name {
+  font-family: var(--display);
+  font-weight: 800; font-size: 1.05rem;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.mod-desc {
+  font-size: 0.75rem;
+  color: var(--text-2);
+  line-height: 1.65;
+  flex: 1; margin-bottom: 20px;
+}
+
+.mod-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 18px; }
+
+.mod-tag {
+  padding: 3px 9px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  font-size: 0.6rem; color: var(--text-3);
+}
+
+.mod-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.mod-cta {
+  font-family: var(--display);
+  font-weight: 700; font-size: 0.76rem;
+  color: var(--green);
+}
+
+.mod-arrow {
+  font-size: 0.9rem; color: var(--green);
+  transition: transform 0.18s ease;
+}
+
+.mod-card:hover .mod-arrow { transform: translateX(4px); }
+
+@keyframes fade-up {
+  from { opacity:0; transform: translateY(18px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+
+@media (max-width: 860px) {
+  .hero { grid-template-columns: 1fr; padding: 60px 24px 48px; gap: 32px; }
+  .hero-panel { display: none; }
+  .stats-row { grid-template-columns: repeat(2,1fr); padding: 24px; }
+  .modules-section { padding: 40px 24px 60px; }
+  .modules-grid { grid-template-columns: 1fr; }
+  .section-divider { padding: 0 24px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div style="max-width:1100px; margin:0 auto; padding:0 40px; animation: fade-up 0.4s ease both">
+
+  <!-- ── HERO ─────────────────────────── -->
+  <section class="hero" style="padding-left:0;padding-right:0">
+
+    <div>
+      <div class="hero-kicker">
+        <div class="hero-kicker-dot"></div>
+        Smart City Platform
+      </div>
+
+      <h1 class="hero-title">
+        A smarter city<br>
+        starts with <span class="hl">greener</span><br>
+        decisions.
+      </h1>
+
+      <p class="hero-desc">
+        GreenPulse monitors live air quality, tracks carbon emissions across 
+        all transport modes, plans eco-friendly routes, and gives you 
+        AI-powered insights — so your city can breathe easier.
+      </p>
+
+      <div class="hero-btns">
+        <a href="/navigate" class="btn-primary">🗺️ Open City Map</a>
+        <a href="/air-quality" class="btn-outline">💨 Check Air Quality</a>
+      </div>
+    </div>
+
+    <!-- Right panel: live data -->
+    <div class="hero-panel">
+      <div class="panel-header">
+        <span class="panel-header-title">Live City Data</span>
+        <span class="panel-live">
+          <span class="hero-kicker-dot"></span>
+          Real-time
+        </span>
+      </div>
+      <div class="panel-body">
+
+        <div class="drow">
+          <div class="drow-icon">🌬️</div>
+          <div class="drow-info">
+            <div class="drow-label">Air Quality Index</div>
+            <div class="drow-val" id="p-aqi">Acquiring…</div>
+          </div>
+          <div class="drow-badge" id="p-aqi-badge">—</div>
+        </div>
+
+        <div class="drow">
+          <div class="drow-icon">📍</div>
+          <div class="drow-info">
+            <div class="drow-label">Your Location</div>
+            <div class="drow-val" id="p-coords">Waiting for GPS…</div>
+          </div>
+          <div class="drow-badge">GPS</div>
+        </div>
+
+        <div class="drow">
+          <div class="drow-icon">🌿</div>
+          <div class="drow-info">
+            <div class="drow-label">Walk vs Petrol Car</div>
+            <div class="drow-val" style="color:var(--green-lt)">−100% CO₂</div>
+          </div>
+          <div class="drow-badge">ECO</div>
+        </div>
+
+        <div class="drow">
+          <div class="drow-icon">🤖</div>
+          <div class="drow-info">
+            <div class="drow-label">AI Assistant</div>
+            <div class="drow-val">Llama 3.3 · Ready</div>
+          </div>
+          <div class="drow-badge">AI</div>
+        </div>
+
+      </div>
+    </div>
+
+  </section>
+</div>
+
+<!-- ── STATS ──────────────────────────── -->
+<div style="max-width:1100px;margin:0 auto;padding:0 40px 40px;">
+  <div class="stats-row" style="margin:0">
+    <div class="stat-box">
+      <div class="stat-icon">🌬️</div>
+      <div class="stat-val green" id="sb-aqi">—</div>
+      <div class="stat-label">Live AQI</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-icon">🌿</div>
+      <div class="stat-val green">0g</div>
+      <div class="stat-label">Walk CO₂ /km</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-icon">⛽</div>
+      <div class="stat-val amber">192g</div>
+      <div class="stat-label">Car CO₂ /km</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-icon">🤖</div>
+      <div class="stat-val sky">AI</div>
+      <div class="stat-label">Smart Assistant</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODULES ────────────────────────── -->
+<section class="modules-section">
+
+  <div class="sec-header">
+    <div class="sec-kicker">Platform Modules</div>
+    <h2 class="sec-title">Four systems, <span>one smart city</span></h2>
+  </div>
+
+  <div class="modules-grid">
+
+    <a href="/navigate" class="mod-card" style="text-decoration:none">
+      <div class="mod-num">01 / 04</div>
+      <div class="mod-top-row">
+        <div class="mod-icon">🗺️</div>
+        <div class="mod-status"><div class="mod-status-dot"></div>Live GPS</div>
+      </div>
+      <div class="mod-name">Eco Navigation</div>
+      <div class="mod-desc">
+        Real-time GPS tracking with eco-route planning on a live interactive map.
+        Search any address, draw routes, and see speed, heading and accuracy live.
+      </div>
+      <div class="mod-tags">
+        <span class="mod-tag">Route Planning</span>
+        <span class="mod-tag">OpenStreetMap</span>
+        <span class="mod-tag">Live Tracking</span>
+      </div>
+      <div class="mod-footer">
+        <span class="mod-cta">Open Map</span>
+        <span class="mod-arrow">→</span>
+      </div>
+    </a>
+
+    <a href="/air-quality" class="mod-card" style="text-decoration:none">
+      <div class="mod-num">02 / 04</div>
+      <div class="mod-top-row">
+        <div class="mod-icon">💨</div>
+        <div class="mod-status"><div class="mod-status-dot"></div>Monitoring</div>
+      </div>
+      <div class="mod-name">Air Quality Monitor</div>
+      <div class="mod-desc">
+        Live AQI data with full pollutant breakdown — PM2.5, NO₂, O₃ and more.
+        Health advisories and transport recommendations based on current air quality.
+      </div>
+      <div class="mod-tags">
+        <span class="mod-tag">8 Pollutants</span>
+        <span class="mod-tag">Health Alerts</span>
+        <span class="mod-tag">Real-Time</span>
+      </div>
+      <div class="mod-footer">
+        <span class="mod-cta">Check Air</span>
+        <span class="mod-arrow">→</span>
+      </div>
+    </a>
+
+    <div class="mod-card" onclick="openCarbonPopup()">
+      <div class="mod-num">03 / 04</div>
+      <div class="mod-top-row">
+        <div class="mod-icon">🌍</div>
+        <div class="mod-status"><div class="mod-status-dot"></div>Calculator</div>
+      </div>
+      <div class="mod-name">Carbon Footprint</div>
+      <div class="mod-desc">
+        Compare CO₂ emissions across all 8 transport modes against driving.
+        See tree-absorption equivalents and live charts in a dedicated popup.
+      </div>
+      <div class="mod-tags">
+        <span class="mod-tag">8 Modes</span>
+        <span class="mod-tag">CO₂ Grams</span>
+        <span class="mod-tag">Comparison</span>
+      </div>
+      <div class="mod-footer">
+        <span class="mod-cta">Open Calculator ↗</span>
+        <span class="mod-arrow">↗</span>
+      </div>
+    </div>
+
+    <div class="mod-card" onclick="toggleChat()">
+      <div class="mod-num">04 / 04</div>
+      <div class="mod-top-row">
+        <div class="mod-icon">🤖</div>
+        <div class="mod-status"><div class="mod-status-dot"></div>AI Online</div>
+      </div>
+      <div class="mod-name">Smart City AI</div>
+      <div class="mod-desc">
+        Context-aware assistant powered by Llama 3.3 70B. Knows your live AQI,
+        route and transport mode. Ask anything about eco travel or city health.
+      </div>
+      <div class="mod-tags">
+        <span class="mod-tag">Llama 3.3</span>
+        <span class="mod-tag">Context-Aware</span>
+        <span class="mod-tag">Every Page</span>
+      </div>
+      <div class="mod-footer">
+        <span class="mod-cta">Chat with AI</span>
+        <span class="mod-arrow">→</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<script>
+if (navigator.geolocation) {
+  navigator.geolocation.getCurrentPosition(pos => {
+    const lat = pos.coords.latitude.toFixed(4);
+    const lon = pos.coords.longitude.toFixed(4);
+    document.getElementById('p-coords').textContent = `${lat}°, ${lon}°`;
+
+    fetch(`/api/aqi?lat=${lat}&lon=${lon}`)
+      .then(r => r.json())
+      .then(d => {
+        document.getElementById('p-aqi').textContent       = `${d.aqi} · ${d.category}`;
+        document.getElementById('p-aqi').style.color       = d.color;
+        document.getElementById('p-aqi-badge').textContent = d.emoji + ' ' + d.category;
+        document.getElementById('sb-aqi').textContent      = d.aqi;
+        document.getElementById('sb-aqi').style.color      = d.color;
+        document.getElementById('nav-aqi-text').textContent= `AQI ${d.aqi} · ${d.category}`;
+        siteAQI = d;
+      });
+  });
+}
+</script>
+
+{% endblock %}

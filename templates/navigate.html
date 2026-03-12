@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+{% block title %}GreenPulse — Navigate{% endblock %}
+{% block body_class %}page-navigate{% endblock %}
+{% set active_page = 'navigate' %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+{% endblock %}
+
+{% block page_css %}
+<style>
+.page-navigate #page-content {
+  padding-top: 54px;
+  height: 100vh;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 320px 1fr;
+}
+
+/* Sidebar */
+.nav-sidebar {
+  background: var(--bg-nav);
+  backdrop-filter: blur(20px);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow: hidden; z-index: 10;
+}
+
+.nav-sidebar-scroll {
+  flex: 1; overflow-y: auto; padding: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--mint-dim) transparent;
+}
+
+.sidebar-section { margin-bottom: 20px; }
+
+.sidebar-section-label {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-3);
+  margin-bottom: 10px;
+  font-family: var(--display);
+  font-weight: 700;
+}
+
+/* Route form */
+.route-form { display: flex; flex-direction: column; gap: 8px; }
+
+.rf-input-wrap { position: relative; }
+.rf-input-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 0.85rem; pointer-events: none; }
+
+.rf-input {
+  width: 100%;
+  padding: 10px 10px 10px 34px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text); font-family: var(--mono); font-size: 0.78rem;
+  outline: none; transition: var(--transition);
+}
+.rf-input::placeholder { color: var(--text-3); }
+.rf-input:focus { border-color: var(--border-hi); box-shadow: 0 0 0 3px var(--mint-glow); }
+
+.rf-hint { font-size: 0.64rem; color: var(--text-3); padding: 2px 4px; font-style: italic; }
+
+.btn-get-route {
+  padding: 10px;
+  background: linear-gradient(135deg, var(--mint), var(--mint-dim));
+  border: none; border-radius: var(--radius-sm);
+  color: var(--bg-deep);
+  font-family: var(--display); font-weight: 700; font-size: 0.8rem;
+  cursor: pointer; transition: var(--transition);
+}
+.btn-get-route:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(57,211,83,0.4); }
+.btn-get-route:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+/* Route stats card */
+.route-result {
+  display: flex; gap: 0;
+  background: rgba(57,211,83,0.06);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin-top: 8px;
+  animation: slide-in 0.3s ease;
+}
+
+@keyframes slide-in {
+  from { opacity:0; transform: translateY(6px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+
+.rr-item { flex:1; padding: 10px; text-align: center; }
+.rr-item + .rr-item { border-left: 1px solid var(--border); }
+.rr-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3); }
+.rr-val { font-family: var(--display); font-weight: 700; font-size: 1.1rem; color: var(--text); }
+.rr-unit { font-size: 0.65rem; color: var(--text-2); }
+
+/* AQI mini card */
+.aqi-mini {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  position: relative; overflow: hidden;
+}
+.aqi-mini::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--aqi-clr, var(--mint)); }
+.aqi-mini-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.aqi-mini-num { font-family: var(--display); font-weight: 800; font-size: 1.8rem; color: var(--aqi-clr, var(--mint)); line-height: 1; }
+.aqi-mini-label { font-family: var(--display); font-weight: 700; font-size: 0.85rem; color: var(--aqi-clr, var(--mint)); }
+.aqi-mini-advice { font-size: 0.7rem; color: var(--text-2); }
+.aqi-mini-comps { display: grid; grid-template-columns: repeat(4,1fr); gap: 4px; margin-top: 8px; }
+.aqi-comp-sm { background: rgba(0,0,0,0.2); border-radius: 4px; padding: 4px; text-align: center; }
+.aqi-comp-sm-label { font-size: 0.58rem; color: var(--text-3); text-transform: uppercase; }
+.aqi-comp-sm-val { font-size: 0.68rem; color: var(--text-2); }
+
+/* Suggestion card */
+.suggest-card {
+  background: var(--bg);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  display: flex; gap: 12px; align-items: flex-start;
+  animation: slide-in 0.3s ease;
+}
+.suggest-em { font-size: 1.8rem; flex-shrink: 0; margin-top: 2px; }
+.suggest-mode-name { font-family: var(--display); font-weight: 700; color: var(--mint); margin-bottom: 3px; }
+.suggest-mode-why { font-size: 0.72rem; color: var(--text-2); line-height: 1.5; }
+.suggest-mode-co2 { font-size: 0.64rem; color: var(--text-3); margin-top: 5px; }
+
+/* Map area */
+#map {
+  width: 100%; height: 100%;
+  background: #0e1a14;
+}
+.leaflet-tile-pane { filter: saturate(0.55) brightness(0.55) hue-rotate(85deg); }
+
+/* Map overlays */
+.map-btm-bar {
+  position: absolute;
+  bottom: 16px; left: 50%; transform: translateX(-50%);
+  z-index: 800;
+  background: rgba(13,18,15,0.92);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 8px 22px;
+  display: flex; align-items: center; gap: 20px;
+  font-size: 0.72rem;
+  color: var(--text-2);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+}
+.mb-stat-val { font-family: var(--display); font-weight: 700; font-size: 0.88rem; color: var(--text); }
+.mb-stat-sep { width: 1px; height: 22px; background: var(--border); }
+
+.btn-recenter-map {
+  position: absolute; top: 16px; right: 16px;
+  z-index: 800;
+  background: rgba(13,18,15,0.92);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-2); font-family: var(--mono); font-size: 0.72rem;
+  padding: 8px 13px; cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+  transition: var(--transition);
+}
+.btn-recenter-map:hover { border-color: var(--border-hi); color: var(--mint); }
+
+/* Custom markers */
+.user-marker { width: 18px; height: 18px; border-radius: 50%; background: var(--mint); border: 3px solid #0b0f0d; box-shadow: 0 0 0 4px rgba(57,211,83,0.3); animation: upm 2s ease-in-out infinite; }
+@keyframes upm { 0%,100% { box-shadow: 0 0 0 4px rgba(57,211,83,0.3),0 0 16px rgba(57,211,83,0.5); } 50% { box-shadow: 0 0 0 8px rgba(57,211,83,0.1),0 0 24px rgba(57,211,83,0.3); } }
+.dest-marker { width: 16px; height: 16px; border-radius: 50%; background: var(--amber); border: 3px solid #0b0f0d; box-shadow: 0 0 12px rgba(245,166,35,0.5); }
+
+.map-wrap { position: relative; }
+
+@media (max-width: 700px) {
+  .page-navigate #page-content { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .nav-sidebar { height: 260px; border-right: none; border-bottom: 1px solid var(--border); }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Sidebar -->
+<div class="nav-sidebar">
+  <div class="nav-sidebar-scroll">
+
+    <!-- Route planner -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Route Planner</div>
+      <div class="route-form">
+        <div class="rf-input-wrap">
+          <span class="rf-input-icon">📍</span>
+          <input id="input-from" class="rf-input" type="text" placeholder="From (blank = my GPS location)"/>
+        </div>
+        <p class="rf-hint">Leave blank to use your live location</p>
+        <div class="rf-input-wrap">
+          <span class="rf-input-icon">🏁</span>
+          <input id="input-to" class="rf-input" type="text" placeholder="To — enter destination"/>
+        </div>
+        <button id="btn-route" class="btn-get-route">Get Eco Route</button>
+      </div>
+      <div id="route-result" style="display:none" class="route-result">
+        <div class="rr-item">
+          <div class="rr-label">Distance</div>
+          <div class="rr-val"><span id="route-distance">—</span> <span class="rr-unit">km</span></div>
+        </div>
+        <div class="rr-item">
+          <div class="rr-label">Duration</div>
+          <div class="rr-val"><span id="route-duration">—</span> <span class="rr-unit">min</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AQI -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Air Quality</div>
+      <div class="aqi-mini" id="aqi-mini">
+        <div class="aqi-mini-row">
+          <div class="aqi-mini-num" id="aqi-num">—</div>
+          <div>
+            <div class="aqi-mini-label" id="aqi-cat">Loading…</div>
+            <div id="aqi-emoji-nav" style="font-size:1.1rem">⏳</div>
+          </div>
+        </div>
+        <div class="aqi-mini-advice" id="aqi-advice-nav">Acquiring location…</div>
+        <div class="aqi-mini-comps" id="aqi-comps-nav"></div>
+      </div>
+    </div>
+
+    <!-- Suggestion -->
+    <div class="sidebar-section" id="suggest-sec" style="display:none">
+      <div class="sidebar-section-label">Eco Suggestion</div>
+      <div class="suggest-card">
+        <div class="suggest-em" id="s-icon">🚶</div>
+        <div>
+          <div class="suggest-mode-name" id="s-mode">—</div>
+          <div class="suggest-mode-why" id="s-why">—</div>
+          <div class="suggest-mode-co2" id="s-co2">—</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Map -->
+<div class="map-wrap" style="position:relative">
+  <div id="map"></div>
+
+  <button class="btn-recenter-map" onclick="MapModule.recenterOnUser()">🎯 My Location</button>
+
+  <div class="map-btm-bar">
+    <div>
+      <div style="font-size:0.58rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.08em">Speed</div>
+      <span id="stat-speed" class="mb-stat-val">—</span>
+      <span style="font-size:0.62rem;color:var(--text-2)"> km/h</span>
+    </div>
+    <div class="mb-stat-sep"></div>
+    <div>
+      <div style="font-size:0.58rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.08em">Heading</div>
+      <span id="stat-heading" class="mb-stat-val">—</span>
+    </div>
+    <div class="mb-stat-sep"></div>
+    <div>
+      <div style="font-size:0.58rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.08em">Accuracy</div>
+      <span id="stat-acc" class="mb-stat-val">—</span>
+    </div>
+    <div class="mb-stat-sep"></div>
+    <div>
+      <div style="font-size:0.58rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.08em">Coords</div>
+      <span id="coords-lat" class="mb-stat-val" style="font-size:0.75rem">—</span>,
+      <span id="coords-lon" class="mb-stat-val" style="font-size:0.75rem">—</span>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block page_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="/static/js/map.js"></script>
+<script src="/static/js/navigate.js"></script>
+{% endblock %}

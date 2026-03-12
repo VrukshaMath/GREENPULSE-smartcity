@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}GreenPulse — Smart City Eco Platform{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  {% block extra_head %}{% endblock %}
+  <link rel="stylesheet" href="/static/css/site.css">
+  {% block page_css %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+
+<!-- ══════════════════════════════════════
+     GLOBAL TOPNAV
+══════════════════════════════════════ -->
+<nav id="topnav">
+  <a href="/" class="brand">
+    <div class="brand-icon">
+      <div class="brand-icon-inner"></div>
+    </div>
+    <div class="brand-wordmark">
+      <span class="brand-name">Green<em>Pulse</em></span>
+      <span class="brand-tag">SMART CITY</span>
+    </div>
+  </a>
+
+  <div class="nav-links">
+    <a href="/" class="nav-link {% if active_page == 'home' %}active{% endif %}">
+      <span class="nav-link-icon">⬡</span> Dashboard
+    </a>
+    <a href="/navigate" class="nav-link {% if active_page == 'navigate' %}active{% endif %}">
+      <span class="nav-link-icon">🗺️</span> Navigate
+    </a>
+    <a href="/air-quality" class="nav-link {% if active_page == 'aqi' %}active{% endif %}">
+      <span class="nav-link-icon">💨</span> Air Quality
+    </a>
+    <button onclick="openCarbonPopup()" class="nav-link nav-link-btn">
+      <span class="nav-link-icon">🌍</span> Carbon Meter
+    </button>
+  </div>
+
+  <div class="nav-right">
+    <div class="nav-status-pill">
+      <span class="status-dot"></span>
+      <span id="nav-aqi-text">AQI —</span>
+    </div>
+  </div>
+</nav>
+
+<!-- PAGE CONTENT -->
+<main id="page-content">
+  {% block content %}{% endblock %}
+</main>
+
+<!-- ══════════════════════════════════════
+     FLOATING AI CHATBOT (every page)
+══════════════════════════════════════ -->
+<button id="chat-fab" onclick="toggleChat()" title="Ask GreenPulse AI">
+  <span id="chat-fab-icon">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <path d="M12 2C6.48 2 2 6.02 2 11c0 2.89 1.42 5.47 3.64 7.17L5 21l3.12-1.56C9.3 19.8 10.62 20 12 20c5.52 0 10-4.02 10-9S17.52 2 12 2z"/>
+    </svg>
+  </span>
+  <span class="chat-fab-label">AI Assistant</span>
+  <span class="chat-fab-ring"></span>
+</button>
+
+<!-- Chat Drawer -->
+<div id="chat-drawer">
+  <div class="chat-drawer-top">
+    <div class="chat-drawer-brand">
+      <div class="chat-orb">
+        <div class="chat-orb-pulse"></div>
+      </div>
+      <div>
+        <div class="chat-drawer-name">GreenPulse AI</div>
+        <div class="chat-drawer-sub">Smart City Intelligence</div>
+      </div>
+    </div>
+    <button class="chat-close" onclick="toggleChat()">✕</button>
+  </div>
+
+  <div class="chat-quick-btns">
+    <button class="cqb" onclick="quickChat('What is the AQI today?')">🌬️ AQI?</button>
+    <button class="cqb" onclick="quickChat('Best eco transport for 10km?')">🚴 Eco mode?</button>
+    <button class="cqb" onclick="quickChat('How to reduce my carbon footprint?')">🌍 CO₂ tips</button>
+    <button class="cqb" onclick="quickChat('Is the air safe for cycling today?')">😷 Safe to cycle?</button>
+  </div>
+
+  <div id="chat-msgs" class="chat-msgs"></div>
+
+  <div class="chat-input-bar">
+    <input id="chat-in" class="chat-in" type="text"
+           placeholder="Ask about air quality, routes, eco tips…" autocomplete="off"/>
+    <button id="chat-send-btn" class="chat-send" onclick="sendChat()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+    </button>
+  </div>
+</div>
+
+<div id="chat-veil" onclick="toggleChat()"></div>
+<div id="toast-wrap"></div>
+
+<script src="/static/js/site.js"></script>
+{% block page_js %}{% endblock %}
+
+</body>
+</html>

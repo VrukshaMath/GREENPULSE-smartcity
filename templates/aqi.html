@@ -1,0 +1,513 @@
+{% extends "base.html" %}
+{% block title %}GreenPulse — Air Quality Monitor{% endblock %}
+{% block body_class %}page-aqi{% endblock %}
+{% set active_page = 'aqi' %}
+
+{% block page_css %}
+<style>
+.page-aqi #page-content {
+  padding-top: 54px;
+  min-height: 100vh;
+  overflow-y: auto;
+  background: var(--bg);
+}
+
+/* Animated background */
+.aqi-page-bg {
+  position: fixed; inset: 0; z-index: 0;
+  background: var(--bg);
+  pointer-events: none;
+}
+
+.aqi-page-bg::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 30%, rgba(74,184,212,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 60% at 80% 70%, rgba(57,211,83,0.05) 0%, transparent 60%);
+}
+
+/* Page wrapper */
+.aqi-page-wrap {
+  position: relative; z-index: 10;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 30px 80px;
+}
+
+/* Page header */
+.aqi-page-header {
+  margin-bottom: 36px;
+  animation: fade-up 0.5s ease both;
+}
+
+.aqi-page-eyebrow {
+  font-size: 0.62rem; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--sky);
+  margin-bottom: 8px;
+}
+
+.aqi-page-title {
+  font-family: var(--display);
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  line-height: 1.1;
+}
+
+.aqi-page-title .hl { color: var(--sky); }
+
+.aqi-page-sub {
+  font-size: 0.82rem;
+  color: var(--text-2);
+  margin-top: 10px;
+  line-height: 1.6;
+  max-width: 500px;
+}
+
+/* ── HERO AQI DISPLAY ─────────────────── */
+.aqi-hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 20px;
+  margin-bottom: 24px;
+  animation: fade-up 0.5s ease 0.1s both;
+}
+
+/* Big AQI card */
+.aqi-big-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center;
+  min-height: 200px;
+}
+
+.aqi-big-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--aqi-color, var(--sky));
+  transition: background 0.5s ease;
+}
+
+/* Radial gauge background */
+.aqi-big-card::after {
+  content: '';
+  position: absolute; top: -40%; left: 50%; transform: translateX(-50%);
+  width: 300px; height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--aqi-color, var(--sky)) 0%, transparent 70%);
+  opacity: 0.04;
+  pointer-events: none;
+  transition: background 0.5s ease;
+}
+
+.aqi-big-emoji { font-size: 2.5rem; margin-bottom: 8px; }
+.aqi-big-num {
+  font-family: var(--display);
+  font-size: 5rem; font-weight: 900;
+  line-height: 1;
+  color: var(--aqi-color, var(--sky));
+  transition: color 0.5s ease;
+}
+.aqi-big-cat {
+  font-family: var(--display);
+  font-size: 1.1rem; font-weight: 700;
+  color: var(--aqi-color, var(--sky));
+  transition: color 0.5s ease;
+  margin-bottom: 6px;
+}
+.aqi-big-advice { font-size: 0.78rem; color: var(--text-2); line-height: 1.5; max-width: 200px; }
+
+/* Gauge track */
+.aqi-gauge {
+  margin-top: 16px;
+  width: 100%;
+}
+.aqi-gauge-track {
+  height: 6px; border-radius: 99px;
+  background: rgba(255,255,255,0.06);
+  overflow: hidden;
+}
+.aqi-gauge-fill {
+  height: 100%; border-radius: 99px;
+  background: var(--aqi-color, var(--sky));
+  transition: width 1s cubic-bezier(0.4,0,0.2,1), background 0.5s ease;
+  width: 0%;
+}
+.aqi-gauge-labels {
+  display: flex; justify-content: space-between;
+  font-size: 0.58rem; color: var(--text-3);
+  margin-top: 5px;
+}
+
+/* Pollutant details card */
+.aqi-details-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+}
+
+.adc-title {
+  font-family: var(--display); font-weight: 700;
+  font-size: 0.8rem; color: var(--text);
+  margin-bottom: 16px;
+  letter-spacing: 0.03em;
+}
+
+.pollutant-list { display: flex; flex-direction: column; gap: 10px; }
+
+.pollutant-row {
+  display: flex; align-items: center; gap: 10px;
+}
+
+.poll-name {
+  width: 50px; flex-shrink: 0;
+  font-size: 0.7rem; color: var(--text-2);
+  font-family: var(--mono);
+}
+
+.poll-bar-track {
+  flex: 1; height: 5px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 99px; overflow: hidden;
+}
+
+.poll-bar-fill {
+  height: 100%; border-radius: 99px;
+  transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+}
+
+.poll-val {
+  width: 60px; text-align: right;
+  font-size: 0.68rem; color: var(--text-3); font-family: var(--mono);
+}
+
+/* ── TRANSPORT ADVICE SECTION ─────────── */
+.transport-section {
+  margin-bottom: 24px;
+  animation: fade-up 0.5s ease 0.2s both;
+}
+
+.section-head {
+  font-family: var(--display); font-weight: 700;
+  font-size: 0.7rem; text-transform: uppercase;
+  letter-spacing: 0.14em; color: var(--text-3);
+  margin-bottom: 12px;
+}
+
+.transport-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.transport-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  text-align: center;
+  transition: var(--transition);
+}
+
+.transport-card.recommended {
+  border-color: var(--mint);
+  background: rgba(57,211,83,0.05);
+  box-shadow: 0 0 20px rgba(57,211,83,0.1);
+}
+
+.tc-icon { font-size: 1.6rem; margin-bottom: 6px; }
+.tc-name { font-family: var(--display); font-weight: 700; font-size: 0.78rem; color: var(--text); margin-bottom: 4px; }
+.tc-co2 { font-size: 0.65rem; color: var(--text-3); font-family: var(--mono); }
+.tc-badge {
+  margin-top: 6px;
+  display: inline-block;
+  padding: 2px 8px;
+  background: var(--mint);
+  border-radius: 99px;
+  font-size: 0.58rem;
+  color: var(--bg-deep);
+  font-family: var(--display); font-weight: 700;
+}
+
+/* ── HEALTH ADVICE SECTION ────────────── */
+.health-section {
+  animation: fade-up 0.5s ease 0.3s both;
+}
+
+.health-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.health-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  border-left: 3px solid var(--card-left-color, var(--mint));
+}
+
+.hc-title { font-family: var(--display); font-weight: 700; font-size: 0.8rem; color: var(--text); margin-bottom: 6px; }
+.hc-text  { font-size: 0.72rem; color: var(--text-2); line-height: 1.6; }
+
+@keyframes fade-up {
+  from { opacity:0; transform: translateY(20px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+
+@media (max-width: 700px) {
+  .aqi-hero-grid { grid-template-columns: 1fr; }
+  .aqi-page-wrap { padding: 20px 16px 80px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="aqi-page-bg"></div>
+
+<div class="aqi-page-wrap">
+
+  <!-- Header -->
+  <div class="aqi-page-header">
+    <div class="aqi-page-eyebrow">Real-Time Monitoring</div>
+    <h1 class="aqi-page-title">Air Quality <span class="hl">Intelligence</span></h1>
+    <p class="aqi-page-sub">Live pollutant data for your location. Updated automatically as you move.</p>
+  </div>
+
+  <!-- Hero: AQI + Pollutants -->
+  <div class="aqi-hero-grid">
+
+    <div class="aqi-big-card" id="aqi-big-card">
+      <div class="aqi-big-emoji" id="aqi-big-emoji">⏳</div>
+      <div class="aqi-big-num" id="aqi-big-num">—</div>
+      <div class="aqi-big-cat" id="aqi-big-cat">Loading…</div>
+      <div class="aqi-big-advice" id="aqi-big-advice">Acquiring your location…</div>
+      <div class="aqi-gauge">
+        <div class="aqi-gauge-track">
+          <div class="aqi-gauge-fill" id="aqi-gauge-fill"></div>
+        </div>
+        <div class="aqi-gauge-labels">
+          <span>1 Good</span><span>2 Fair</span><span>3 Moderate</span><span>4 Poor</span><span>5 Very Poor</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="aqi-details-card">
+      <div class="adc-title">🔬 Pollutant Breakdown (μg/m³)</div>
+      <div class="pollutant-list" id="pollutant-list">
+        <div style="color:var(--text-3);font-size:0.75rem;font-style:italic">Waiting for GPS location…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transport Advice -->
+  <div class="transport-section">
+    <div class="section-head">Transport Recommendations by AQI</div>
+    <div class="transport-grid" id="transport-grid">
+      <div class="transport-card">
+        <div class="tc-icon">🚶</div>
+        <div class="tc-name">Walking</div>
+        <div class="tc-co2">0 gCO₂/km</div>
+      </div>
+      <div class="transport-card">
+        <div class="tc-icon">🚴</div>
+        <div class="tc-name">Cycling</div>
+        <div class="tc-co2">0 gCO₂/km</div>
+      </div>
+      <div class="transport-card">
+        <div class="tc-icon">⚡🚴</div>
+        <div class="tc-name">E-Bike</div>
+        <div class="tc-co2">5 gCO₂/km</div>
+      </div>
+      <div class="transport-card">
+        <div class="tc-icon">🚇</div>
+        <div class="tc-name">Transit</div>
+        <div class="tc-co2">89 gCO₂/km</div>
+      </div>
+      <div class="transport-card">
+        <div class="tc-icon">🔋🚗</div>
+        <div class="tc-name">EV Car</div>
+        <div class="tc-co2">53 gCO₂/km</div>
+      </div>
+      <div class="transport-card">
+        <div class="tc-icon">⛽</div>
+        <div class="tc-name">Petrol Car</div>
+        <div class="tc-co2">192 gCO₂/km</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Health Advice -->
+  <div class="health-section">
+    <div class="section-head">Health & Activity Guidance</div>
+    <div class="health-cards">
+      <div class="health-card" style="--card-left-color:var(--mint)">
+        <div class="hc-title">🏃 Outdoor Exercise</div>
+        <div class="hc-text" id="hc-exercise">Loading health advice…</div>
+      </div>
+      <div class="health-card" style="--card-left-color:var(--sky)">
+        <div class="hc-title">😷 Sensitive Groups</div>
+        <div class="hc-text" id="hc-sensitive">Loading advice…</div>
+      </div>
+      <div class="health-card" style="--card-left-color:var(--amber)">
+        <div class="hc-title">🪟 Ventilation</div>
+        <div class="hc-text" id="hc-ventilation">Loading advice…</div>
+      </div>
+      <div class="health-card" style="--card-left-color:#b97aff">
+        <div class="hc-title">🚗 Commute</div>
+        <div class="hc-text" id="hc-commute">Loading advice…</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block page_js %}
+<script>
+const AQI_HEALTH = {
+  1: {
+    exercise:    "Perfect conditions for outdoor exercise. Go for that run! 🏃",
+    sensitive:   "No restrictions. Air quality is excellent for everyone including children and elderly.",
+    ventilation: "Open your windows! Fresh air is clean and free of harmful pollutants.",
+    commute:     "Walk or cycle to work — today is ideal for active travel."
+  },
+  2: {
+    exercise:    "Good conditions for outdoor activity. Most people can exercise normally.",
+    sensitive:   "Generally fine. Unusually sensitive individuals may notice mild effects.",
+    ventilation: "Windows can be open. Air quality is acceptable.",
+    commute:     "Cycling and walking are fine. Great day for an eco-friendly commute."
+  },
+  3: {
+    exercise:    "Moderate air quality. Reduce prolonged outdoor exertion if you're sensitive.",
+    sensitive:   "Children, elderly, and people with respiratory conditions should limit outdoor time.",
+    ventilation: "Consider limiting ventilation during peak traffic hours.",
+    commute:     "Consider public transit or e-bike over cycling for longer distances."
+  },
+  4: {
+    exercise:    "Avoid outdoor exercise. Poor air quality can cause respiratory irritation.",
+    sensitive:   "Stay indoors. People with asthma or heart disease should avoid going outside.",
+    ventilation: "Keep windows closed. Use air purifiers if available.",
+    commute:     "Use enclosed public transit or an EV. Avoid cycling or walking."
+  },
+  5: {
+    exercise:    "Do not exercise outdoors. Serious health risk for everyone.",
+    sensitive:   "Remain indoors with windows closed. Seek medical attention if symptoms arise.",
+    ventilation: "All windows and doors should be closed. Air purifier at max setting.",
+    commute:     "Essential travel only. Use enclosed transport with air filtration."
+  }
+};
+
+const POLLUTANTS = [
+  { key: 'pm2_5', label: 'PM2.5', max: 75,  color: '#e05c2a' },
+  { key: 'pm10',  label: 'PM10',  max: 150, color: '#f5a623' },
+  { key: 'o3',    label: 'O₃',    max: 180, color: '#4ab8d4' },
+  { key: 'no2',   label: 'NO₂',   max: 200, color: '#b97aff' },
+  { key: 'co',    label: 'CO',    max: 1000, color: '#39d353' },
+  { key: 'so2',   label: 'SO₂',   max: 100, color: '#f5a623' },
+  { key: 'nh3',   label: 'NH₃',   max: 50,  color: '#4ab8d4' },
+  { key: 'no',    label: 'NO',    max: 50,  color: '#e05c2a' },
+];
+
+const TRANSPORT_AQI = {
+  1: ['walking','cycling'],
+  2: ['walking','cycling','e-bike'],
+  3: ['e-bike','public_transit'],
+  4: ['public_transit','ev_car'],
+  5: ['ev_car','public_transit'],
+};
+
+function renderAQI(data) {
+  document.documentElement.style.setProperty('--aqi-color', data.color);
+
+  document.getElementById('aqi-big-emoji').textContent  = data.emoji;
+  document.getElementById('aqi-big-num').textContent    = data.aqi;
+  document.getElementById('aqi-big-cat').textContent    = data.category;
+  document.getElementById('aqi-big-advice').textContent = data.advice;
+  document.getElementById('aqi-big-num').style.color    = data.color;
+  document.getElementById('aqi-big-cat').style.color    = data.color;
+  document.getElementById('aqi-big-card').style.setProperty('--aqi-color', data.color);
+  document.getElementById('nav-aqi-text').textContent   = `AQI ${data.aqi} · ${data.category}`;
+
+  // Gauge
+  const pct = (data.aqi / 5) * 100;
+  const fill = document.getElementById('aqi-gauge-fill');
+  fill.style.width      = pct + '%';
+  fill.style.background = data.color;
+
+  // Pollutants
+  const c = data.components || {};
+  document.getElementById('pollutant-list').innerHTML = POLLUTANTS.map(p => {
+    const val = c[p.key] ?? 0;
+    const barPct = Math.min(100, (val / p.max) * 100).toFixed(1);
+    return `
+      <div class="pollutant-row">
+        <div class="poll-name">${p.label}</div>
+        <div class="poll-bar-track">
+          <div class="poll-bar-fill" style="width:${barPct}%;background:${p.color}"></div>
+        </div>
+        <div class="poll-val">${val.toFixed(2)}</div>
+      </div>
+    `;
+  }).join('');
+
+  // Health advice
+  const advice = AQI_HEALTH[data.aqi] || AQI_HEALTH[1];
+  document.getElementById('hc-exercise').textContent    = advice.exercise;
+  document.getElementById('hc-sensitive').textContent   = advice.sensitive;
+  document.getElementById('hc-ventilation').textContent = advice.ventilation;
+  document.getElementById('hc-commute').textContent     = advice.commute;
+
+  // Transport cards highlighting
+  const recommended = TRANSPORT_AQI[data.aqi] || [];
+  document.querySelectorAll('.transport-card').forEach(card => {
+    const name = card.querySelector('.tc-name').textContent.toLowerCase().replace(/\s+/g,'_').replace('-','_');
+    const modeMap = { walking:'walking', cycling:'cycling', 'e_bike':'e-bike', transit:'public_transit', ev_car:'ev_car', petrol_car:'car' };
+    const mode = modeMap[name];
+    const isRec = recommended.includes(mode);
+    card.classList.toggle('recommended', isRec);
+    if (isRec) {
+      let badge = card.querySelector('.tc-badge');
+      if (!badge) {
+        badge = document.createElement('div');
+        badge.className = 'tc-badge';
+        badge.textContent = '✓ Recommended';
+        card.appendChild(badge);
+      }
+    } else {
+      const badge = card.querySelector('.tc-badge');
+      if (badge) badge.remove();
+    }
+  });
+}
+
+// Get GPS and fetch AQI
+if (navigator.geolocation) {
+  navigator.geolocation.getCurrentPosition(pos => {
+    fetch(`/api/aqi?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`)
+      .then(r => r.json())
+      .then(data => {
+        renderAQI(data);
+        siteAQI = data; // update shared site state
+      })
+      .catch(e => console.error('AQI fetch error', e));
+  }, err => {
+    document.getElementById('aqi-big-cat').textContent    = 'Location denied';
+    document.getElementById('aqi-big-advice').textContent = 'Please allow location access to see local AQI.';
+  });
+} else {
+  document.getElementById('aqi-big-cat').textContent = 'Not supported';
+}
+</script>
+{% endblock %}

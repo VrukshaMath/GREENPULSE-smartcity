@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EcoNav — Eco-Friendly Navigation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+
+<!-- FULL-SCREEN MAP -->
+<div id="map"></div>
+
+<!-- TOPBAR -->
+<header id="topbar">
+  <div class="brand">
+    <div class="brand-leaf"></div>
+    Eco<span>Nav</span>
+  </div>
+  <nav class="topbar-center">
+    <div class="nav-pill">
+      <span>🌬️</span>
+      <span id="aqi-pill-text">AQI —</span>
+    </div>
+    <div class="nav-pill">
+      <span>📍</span>
+      <span id="coords-lat">—</span>, <span id="coords-lon">—</span>
+    </div>
+    <div class="nav-pill live-pill">
+      <span class="live-dot"></span>Live
+    </div>
+  </nav>
+  <div class="topbar-right">
+    <button id="btn-carbon-popup" class="btn-carbon">🌍 Carbon Footprint</button>
+  </div>
+</header>
+
+<!-- LEFT DASHBOARD COLUMN -->
+<div id="dashboard-left">
+
+  <!-- Route Planner -->
+  <div class="dash-card" style="animation-delay:0.05s">
+    <div class="dash-card-header">
+      <span class="dash-card-icon">🗺️</span>
+      <span class="dash-card-title">Route Planner</span>
+    </div>
+    <div class="route-form">
+      <div class="input-wrap">
+        <span class="input-icon">📍</span>
+        <input id="input-from" class="dash-input" type="text" placeholder="From — leave blank for GPS"/>
+      </div>
+      <div class="input-wrap">
+        <span class="input-icon">🏁</span>
+        <input id="input-to" class="dash-input" type="text" placeholder="To — enter destination"/>
+      </div>
+      <button id="btn-route" class="btn-primary">Get Route</button>
+    </div>
+    <div id="route-stats" class="route-stats" style="display:none">
+      <div class="route-stat-item">
+        <div class="rsi-label">Distance</div>
+        <div class="rsi-value"><span id="route-distance">—</span> <small>km</small></div>
+      </div>
+      <div class="route-stat-sep"></div>
+      <div class="route-stat-item">
+        <div class="rsi-label">Duration</div>
+        <div class="rsi-value"><span id="route-duration">—</span> <small>min</small></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AQI Card -->
+  <div class="dash-card" style="animation-delay:0.12s">
+    <div class="dash-card-header">
+      <span class="dash-card-icon">💨</span>
+      <span class="dash-card-title">Air Quality Index</span>
+      <span id="aqi-emoji" class="aqi-emoji-badge">⏳</span>
+    </div>
+    <div class="aqi-main">
+      <div class="aqi-number" id="aqi-value">—</div>
+      <div class="aqi-info">
+        <div class="aqi-category" id="aqi-label">Loading…</div>
+        <div class="aqi-advice" id="aqi-advice">Acquiring location…</div>
+      </div>
+    </div>
+    <div class="aqi-bar-track">
+      <div class="aqi-bar-fill" id="aqi-bar"></div>
+    </div>
+    <div class="aqi-components" id="aqi-components"></div>
+  </div>
+
+  <!-- Transport Suggestion -->
+  <div class="dash-card" id="card-suggest" style="animation-delay:0.2s; display:none">
+    <div class="dash-card-header">
+      <span class="dash-card-icon">♻️</span>
+      <span class="dash-card-title">Eco Suggestion</span>
+    </div>
+    <div class="suggest-body">
+      <div class="suggest-icon" id="suggestion-icon">🚶</div>
+      <div class="suggest-text">
+        <div class="suggest-mode" id="suggestion-mode">—</div>
+        <div class="suggest-reason" id="suggestion-reason">—</div>
+        <div class="suggest-carbon" id="suggestion-carbon">—</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- BOTTOM BAR -->
+<div id="dashboard-bottom">
+  <div class="bottom-stat">
+    <div class="bs-label">Speed</div>
+    <div class="bs-value"><span id="stat-speed">—</span> <small>km/h</small></div>
+  </div>
+  <div class="bottom-stat-sep"></div>
+  <div class="bottom-stat">
+    <div class="bs-label">Heading</div>
+    <div class="bs-value"><span id="stat-heading">—</span></div>
+  </div>
+  <div class="bottom-stat-sep"></div>
+  <div class="bottom-stat">
+    <div class="bs-label">Accuracy</div>
+    <div class="bs-value"><span id="stat-acc">—</span></div>
+  </div>
+  <div class="bottom-stat-sep"></div>
+  <button id="btn-recenter" class="btn-recenter">🎯 My Location</button>
+</div>
+
+<!-- FLOATING CHAT BUTTON -->
+<button id="chat-fab" onclick="toggleChat()">
+  <span id="chat-fab-icon">🌿</span>
+  <span class="chat-fab-label">Ask AI</span>
+  <span class="chat-fab-ping"></span>
+</button>
+
+<!-- CHATBOT DRAWER -->
+<div id="chat-drawer">
+  <div class="chat-drawer-header">
+    <div class="chat-drawer-title">
+      <div class="chat-ai-orb"></div>
+      EcoNav AI Assistant
+    </div>
+    <button class="chat-close-btn" onclick="toggleChat()">✕</button>
+  </div>
+
+  <div class="chat-chips">
+    <button class="chat-chip" onclick="injectChat('What is the AQI right now?')">🌬️ AQI now?</button>
+    <button class="chat-chip" onclick="injectChat('Best eco transport for 10km?')">🚴 Eco mode?</button>
+    <button class="chat-chip" onclick="injectChat('How to reduce carbon footprint?')">🌍 Reduce CO₂?</button>
+    <button class="chat-chip" onclick="injectChat('Is cycling safe with poor air quality?')">😷 Safe to cycle?</button>
+  </div>
+
+  <div id="chat-messages" class="chat-messages"></div>
+
+  <div class="chat-input-row">
+    <input id="chat-input" class="chat-input-field" type="text"
+      placeholder="Ask about routes, AQI, eco tips…" autocomplete="off"/>
+    <button id="btn-chat-send" class="btn-send-msg" onclick="handleChatSend()">➤</button>
+  </div>
+</div>
+
+<div id="chat-backdrop" onclick="toggleChat()"></div>
+<div id="toast-container"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="/static/js/map.js"></script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>
